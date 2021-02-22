@@ -1,0 +1,57 @@
+* {
+  box-sizing: border-box;
+  font-family: "RocknRoll One", sans-serif;
+  padding: 0;
+  margin: 0;
+}
+
+/* navbar */
+.navbar {
+  padding: 0.5rem 2.5rem;
+}
+.navbar-brand {
+  font-size: 2rem;
+}
+/* layout */
+/* container-fluid */
+.container-fluid {
+  padding: 0;
+  margin: 0;
+}
+/* left */
+#left-div {
+  height: 100vh;
+  padding: 1.5rem;
+}
+#left-div ul li:hover {
+  background-color: gold;
+}
+/* add-project-div */
+#add-project-div {
+  position: relative;
+}
+#save-project {
+  position: absolute;
+  right: 0;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+#project {
+  border-radius: 5px;
+}
+/* right */
+#right-div {
+  padding: 1.5rem 5rem;
+  background-color: rgb(177, 175, 175);
+}
+#tasks-div {
+  max-width: 65%;
+  margin: 0 auto;
+}
+#right-div form {
+  padding: 1rem;
+  border: 1px solid black;
+  border-radius: 5px;
+}
