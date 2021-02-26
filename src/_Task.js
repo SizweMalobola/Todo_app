@@ -3,7 +3,9 @@ export default class Task {
     this.title = title;
     this.description = description;
     this.dueDate = dueDate;
-    this.priority = "normal";
     this.complete = false;
+  }
+  toggleComplete() {
+    this.complete = this.complete == false ? true : false;
   }
 }

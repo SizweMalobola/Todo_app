@@ -1,54 +1,19 @@
 import Project from "./_Project";
 import Task from "./_Task";
-var content = document.querySelector("#content");
+import View from "./_View";
+import { formatDistance, subDays } from "date-fns";
+import { format } from "date-fns/esm";
+
+var root = new View(document.querySelector("#content"));
+
 var projects = [];
-
-//? render function, displays inputfield and save button --that will be used to input and saving projects(by title) to global projects array;
-function render() {
-  content.innerHTML = `
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark"><a class="navbar-brand" href="#"><i class="fas fa-clipboard-list"></i> Todo List</a></nav>
-  <div class="container-fluid row">
-  <div id="left-div" class="col-sm-2 bg-light">
-    <ul class="nav nav-pills flex-column">
-      <li class="nav-item">
-      <a class="nav-link active" aria-current="page" href="#"><i class="fas fa-home"></i> Home</a>
-      </li>
-      <li class="nav-item">
-      <a class="nav-link" href="#"><i class="fas fa-calendar-day"></i> Today</a>
-      </li>
-      <li class="nav-item">
-      <a class="nav-link" href="#"><i class="fas fa-calendar-week"></i> Week</a>
-      </li>
-    </ul>
-    <div>
-      <h3 class="display-6 my-3">Projects</h3>
-          <div id="add-project-div" class="d-flex mb-4">
-          <input id="project" type="text" class="form-control ps-1" placeholder="+ add project">
-          <button id="save-project" type="button" class="btn btn-dark">Save</button>
-          </div>
-      <ul id="list-for-projects" class="nav nav-pills flex-column">
-      </ul>
-    </div>
-  </div>
-  <div id="right-div" class="col-sm-10">
-    <div id="tasks-div">
-      <table class="table table-hover">
-        <thead>
-          <tr>
-          <th id="project-title" scope="col">Title</th>
-          <th scope="col">Due Date</th>
-          <th scope="col">Complete</th>
-          <th scope="col">Edit</th>
-          <th scope="col">Delete</th>
-          </tr>
-        </thead>
-      </table>
-   </div> 
-  </div>
-</div>`;
-}
-
-render();
+var saveBtn = document.querySelector("#save-project");
+// var listForTasks = document.querySelector("table");
+var listForProjects = document.querySelector("#list-for-projects");
+var tasksDiv = document.querySelector("#tasks-div");
+var currentProjectIndex;
+var leftDiv = document.querySelector("#left-div");
+var rightDiv = document.querySelector("#right-div");
 
 //?  makeProject function --is for storing projects inside a projects array
 function makeProject(title) {
@@ -57,20 +22,11 @@ function makeProject(title) {
 //? makeTask function
 function makeTask(index, title, description = "", date = "no date") {
   projects[index].addTask(new Task(title, description, date));
-  console.log(projects[index].tasks);
 }
-//?
-// function validateForm() {
-//   var val = document.querySelector("#task-title");
-//   if (val == "") {
 
-//     return false;
-//   }
-// }
 //! DOM Stuff
 // onclick a project is created and stored in an array
 
-var saveBtn = document.querySelector("#save-project");
 saveBtn.addEventListener("click", function (e) {
   if (document.querySelector("#project").value != "") {
     makeProject(document.querySelector("#project").value);
@@ -93,7 +49,7 @@ function renderProjects() {
   projects.forEach((project, index) => {
     let listItem = document.createElement("li");
     listItem.classList.add("nav-item");
-    listItem.innerHTML = `<a class="nav-link project-item" href="#"><i class="fas fa-tasks"></i> ${project.title}</a>`;
+    listItem.innerHTML = `<a class="nav-link project-item" href="#"><span><i class="fas fa-tasks"></i> ${project.title}</span><i class="far fa-times-circle project-delete"></i></a>`;
     listItem.setAttribute("data-project-index", index);
     listForProjects.appendChild(listItem);
   });
@@ -101,37 +57,58 @@ function renderProjects() {
 
 //TODO: render tasks array items(if array is not empty) in a unordered list
 //! will render only when project list item is clicked
-var tableData = document.querySelector("table");
-function renderTasks(index) {
+var listForTasks = document.querySelector("#list-for-tasks");
+function clearListForTasks() {
   //* remove elments that might have been in the projects unordered list
-  while (tableData.childElementCount > 1) {
-    tableData.lastChild.remove();
+  while (listForTasks.childElementCount > 0) {
+    listForTasks.lastChild.remove();
   }
+}
+function renderTasks(pIndex) {
   //* create li that will be appended to projects unordered list
   //! li should look like this <li data-index="should match same index as projects array">project-title</li>
-  var tasksArray = projects[index].tasks;
+  var tasksArray = projects[pIndex].tasks;
   //* adds tasks to list if tasks array is not empty, else a list item "no tasks" is added to task list
   if (tasksArray.length != 0) {
-    tasksArray.forEach((task, index) => {
-      let tr = document.createElement("tbody");
-      tr.innerHTML = `
-      <tr>
-      <th class="task-title" scope="row"><span>${task.title}</span></th>
-      <td class="task-duedate">${task.dueDate}</td>
-      <td class="task-complete"><button class="comp-btn btn"><i class="fas fa-check"></i></button></td>
-      <td class="task-edit"><button class="edit-btn btn"><i class="far fa-edit"></i></button></td>
-      <td class="task-delete"><button class="del-btn btn"><i class="fas fa-trash-alt"></i></button></td></tr>`;
-      tr.setAttribute("data-task-index", index);
-      tableData.appendChild(tr);
+    tasksArray.forEach((taskObj, index) => {
+      let task = document.createElement("div");
+      task.classList.add("task", "row", "container-fluid");
+      task.innerHTML = `
+          <input class="col-sm-1 task-complete" type="checkbox">
+           <p class="col-sm-3 task-title" >${taskObj.title} ${taskObj.dueDate}</p>
+           <span class="col-sm-6 task-description">${taskObj.description}</span>
+           <div class="col-sm-2 d-flex justify-content-between"><button class="btn btn-sm btn-dark task-edit"><i class="far fa-edit"></i></button><button class="btn btn-sm btn-danger task-delete"><i class="fas fa-trash-alt"></i></button></div>
+      `;
+
+      task.setAttribute("data-task-index", index);
+      task.setAttribute("data-project-index", pIndex);
+      listForTasks.appendChild(task);
+      if (taskObj.complete) {
+        task.classList.toggle("complete", true);
+      } else {
+        task.classList.toggle("complete", false);
+      }
+    });
+    // makes sure that checked elements are persistent
+    let complete = document.querySelectorAll(".complete");
+    complete.forEach((item) => {
+      item.firstElementChild.checked = "true";
     });
   }
 }
 
+function createTaskDivBottom() {
+  let taskDivBottom = document.createElement("div");
+  taskDivBottom.id = "task-div-bottom";
+  taskDivBottom.classList.add("row", "container-fluid");
+  taskDivBottom.innerHTML = `
+    <button id="add-task-btn" class="btn btn-light">+ Add Task</button><button id="clear-completed-tasks" class="btn btn-danger">Clear Completed Tasks</button>
+  `;
+  return taskDivBottom;
+}
 // onclick display tasks
-var listForProjects = document.querySelector("#list-for-projects");
-var tasksDiv = document.querySelector("#tasks-div");
+
 // ! a global variable that will keep track of my current project's index
-var currentProjectIndex;
 listForProjects.addEventListener("click", function (e) {
   if (e.target.classList.contains("project-item")) {
     currentProjectIndex = e.target.parentElement.getAttribute(
@@ -142,20 +119,17 @@ listForProjects.addEventListener("click", function (e) {
       tasksDiv.lastElementChild.remove();
     }
     //* create a input field and a save btn for saving tasks in a project
-    if (tasksDiv.lastElementChild.id != "add-task-btn") {
-      let addTaskBtn = document.createElement("button");
-      addTaskBtn.id = "add-task-btn";
-      addTaskBtn.classList.add("btn", "btn-light");
-      addTaskBtn.innerText = "+ Add Task";
-      tasksDiv.append(addTaskBtn);
+    if (tasksDiv.lastElementChild.id != "task-div-bottom") {
+      tasksDiv.append(createTaskDivBottom());
     }
-    //*display project title when project item is clicked
-    document.querySelector(
-      "#project-title"
-    ).innerText = `${projects[currentProjectIndex].title}`;
+    //*display project title
+    let projectTitle = document.createElement("h1");
+    projectTitle.id = "project-title";
+    projectTitle.innerText = `${projects[currentProjectIndex].title}`;
 
     // TODO: add evenlistener to  save-task button,
     //* render tasks from tasks array inside project object instace
+    clearListForTasks();
     renderTasks(currentProjectIndex);
   }
 });
@@ -170,11 +144,8 @@ tasksDiv.addEventListener("click", function (e) {
         document.querySelector("#task-duedate").value
       );
       //! replace task form with add task btn
-      let addTaskBtn = document.createElement("button");
-      addTaskBtn.id = "add-task-btn";
-      addTaskBtn.classList.add("btn", "btn-light");
-      addTaskBtn.innerText = "+ Add Task";
-      tasksDiv.replaceChild(addTaskBtn, tasksDiv.lastElementChild);
+      tasksDiv.replaceChild(createTaskDivBottom(), tasksDiv.lastElementChild);
+      clearListForTasks();
       renderTasks(currentProjectIndex);
     } else {
       alert("Title must be filled out");
@@ -184,11 +155,8 @@ tasksDiv.addEventListener("click", function (e) {
 //* tasks form cancel-task-btn
 tasksDiv.addEventListener("click", function (e) {
   if (e.target.id == "cancel") {
-    let addTaskBtn = document.createElement("button");
-    addTaskBtn.id = "add-task-btn";
-    addTaskBtn.classList.add("btn", "btn-light");
-    addTaskBtn.innerText = "+ Add Task";
-    tasksDiv.replaceChild(addTaskBtn, tasksDiv.lastElementChild);
+    tasksDiv.replaceChild(createTaskDivBottom(), tasksDiv.lastElementChild);
+    clearListForTasks();
     renderTasks(currentProjectIndex);
   }
 });
@@ -196,7 +164,6 @@ tasksDiv.addEventListener("click", function (e) {
 //TODO when element with a class containing navlink is clicked it must be active
 
 // * onclick, check if target is classList == nav-link,if nav-link remove active class from active link, add active class to target
-var leftDiv = document.querySelector("#left-div");
 leftDiv.addEventListener("click", function (e) {
   if (e.target.classList.contains("nav-link")) {
     let navLinks = document.querySelectorAll(".nav-link");
@@ -210,7 +177,6 @@ leftDiv.addEventListener("click", function (e) {
 });
 
 //TODO when add-task-btn is clicked, add-task-btn should disappear and its place task form should appear
-var rightDiv = document.querySelector("#right-div");
 rightDiv.addEventListener("click", function (e) {
   if (e.target.id == "add-task-btn") {
     let taskForm = document.createElement("form");
@@ -225,6 +191,104 @@ rightDiv.addEventListener("click", function (e) {
             <button id="save-task" type="submit" class="col btn btn-primary">save</button> <button id="cancel" class="col btn btn-danger">cancel</button>
           </div>
     `;
-    e.target.parentElement.replaceChild(taskForm, e.target);
+    tasksDiv.replaceChild(taskForm, e.target.parentElement);
   }
+});
+//
+function clearTasksDivBottom() {
+  if (tasksDiv.lastElementChild.id != "list-for-tasks") {
+    tasksDiv.lastElementChild.remove();
+  }
+}
+
+// delete task form project
+listForTasks.addEventListener("click", function (e) {
+  if (e.target.classList.contains("task-delete")) {
+    let taskIndex = e.target.parentElement.parentElement.getAttribute(
+      "data-task-index"
+    );
+    let projectIndex = e.target.parentElement.parentElement.getAttribute(
+      "data-project-index"
+    );
+    projects[projectIndex].removeTask(taskIndex);
+    if (tasksDiv.lastElementChild.id != "list-for-tasks") {
+      clearListForTasks();
+      renderTasks(projectIndex);
+    } else {
+      // refresh home
+      clearListForTasks();
+      for (let i = 0; i < projects.length; i++) {
+        renderTasks(i);
+      }
+    }
+  }
+});
+// delete project
+listForProjects.addEventListener("click", function (e) {
+  if (e.target.classList.contains("project-delete")) {
+    let projectIndex = e.target.parentElement.parentElement.getAttribute(
+      "data-project-index"
+    );
+    projects.splice(projectIndex, 1);
+    clearListForTasks();
+    clearTasksDivBottom();
+    renderProjects();
+  }
+});
+
+// all buttons
+var mainBtns = document.querySelector("#main-btns");
+mainBtns.addEventListener("click", function (e) {
+  if (e.target.classList.contains("nav-link")) {
+    clearTasksDivBottom();
+  }
+});
+// home btn
+var homeBtn = document.querySelector("#home-btn");
+homeBtn.addEventListener("click", function (e) {
+  clearListForTasks();
+  if (projects.length != 0) {
+    for (let i = 0; i < projects.length; i++) {
+      renderTasks(i);
+    }
+  }
+});
+//  comp
+listForTasks.addEventListener("click", function (e) {
+  if (e.target.classList.contains("task-complete")) {
+    let projectIndex = e.target.parentElement.getAttribute(
+      "data-project-index"
+    );
+    let taskIndex = e.target.parentElement.getAttribute("data-task-index");
+    let task = projects[projectIndex].tasks[taskIndex];
+    task.toggleComplete();
+    if (task.complete) {
+      e.target.parentElement.classList.toggle("complete", true);
+    } else {
+      e.target.parentElement.classList.toggle("complete", false);
+    }
+  }
+});
+// * clear completed tasks
+// ! fix
+tasksDiv.addEventListener("click", function (e) {
+  if (e.target.id == "clear-completed-tasks") {
+    let tasksArray = projects[currentProjectIndex].tasks;
+    tasksArray.forEach(function (task, index) {
+      console.log(index);
+      if (task.complete) {
+        console.log(`task ${task} index ${index}`);
+        projects[currentProjectIndex].removeTask(index);
+      }
+    });
+    console.log(projects[currentProjectIndex].tasks);
+    clearListForTasks();
+    renderTasks(currentProjectIndex);
+  }
+});
+// Today
+var todayBtn = document.querySelector("#today-btn");
+todayBtn.addEventListener("click", function (e) {
+  console.log(format());
+  // format dd/mm/yyyy
 });

@@ -41,6 +41,11 @@
 #project {
   border-radius: 5px;
 }
+.project-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
 /* right */
 #right-div {
   padding: 1.5rem 5rem;
@@ -54,4 +59,26 @@
   padding: 1rem;
   border: 1px solid black;
   border-radius: 5px;
+}
+.task {
+  width: 100%;
+  background-color: white;
+  padding: 0.5rem 0;
+  margin-bottom: 0.5rem;
+  border-radius: 5px;
+}
+.task [class^="col"] {
+  margin: auto 0;
+}
+.task-title {
+  white-space: nowrap;
+  overflow-x: auto;
+}
+.task-description {
+  white-space: nowrap;
+  overflow-x: auto;
+}
+.complete {
+  text-decoration: line-through;
+  color: gray;
 }
