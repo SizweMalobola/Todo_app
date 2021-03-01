@@ -13,8 +13,8 @@ export default class View {
               <a id="today-btn" class="nav-link" href="#"><i class="fas fa-calendar-day"></i> Today</a>
               </li>
               <li class="nav-item">
-              <a id="week-btn
-              " class="nav-link" href="#"><i class="fas fa-calendar-week"></i> Week</a>
+              <a id="week-btn"
+               class="nav-link" href="#"><i class="fas fa-calendar-week"></i> Week</a>
               </li>
             </ul>
             <div>

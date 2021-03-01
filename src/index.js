@@ -1,7 +1,13 @@
 import Project from "./_Project";
 import Task from "./_Task";
 import View from "./_View";
-import { formatDistance, subDays } from "date-fns";
+import {
+  formatDistance,
+  isThisWeek,
+  startOfToday,
+  subDays,
+  parseISO,
+} from "date-fns";
 import { format } from "date-fns/esm";
 
 // ini root
@@ -203,22 +209,87 @@ const controller = (function () {
         tasksArray.forEach(function (task, index) {
           console.log(index);
           if (task.complete) {
-            console.log(`task ${task} index ${index}`);
             projects[currentProjectIndex].removeTask(index);
           }
         });
-        console.log(projects[currentProjectIndex].tasks);
         clearListForTasks();
         renderTasks(currentProjectIndex);
       }
     });
     //*   today
     // ! not finished
+    // TODO 1.get date of the current day(dd/mm/yy) 2.loop through every task of every project and render tasks that are only equal to today's date.
     todayBtn.addEventListener("click", function (e) {
-      console.log(format());
-      // format dd/mm/yyyy
+      clearListForTasks();
+      let today = format(new Date(), "yyyy-MM-dd");
+      if (projects.length != 0) {
+        for (let i = 0; i <= projects.length - 1; i++) {
+          for (let j = 0; j <= projects[i].tasks.length - 1; j++) {
+            console.log(`${projects[i].tasks[j].dueDate} -- ${today}`);
+            if (projects[i].tasks[j].dueDate == today) {
+              let taskObj = projects[i].tasks[j];
+              let task = document.createElement("div");
+              task.classList.add("task", "row", "container-fluid");
+              task.innerHTML = `
+            <input class="col-sm-1 task-complete" type="checkbox">
+             <p class="col-sm-3 task-title" >${taskObj.title} ${taskObj.dueDate}</p>
+             <span class="col-sm-6 task-description">${taskObj.description}</span>
+             <div class="col-sm-2 d-flex justify-content-between"><button class="btn btn-sm btn-dark task-edit"><i class="far fa-edit"></i></button><button class="btn btn-sm btn-danger task-delete"><i class="fas fa-trash-alt"></i></button></div>
+        `;
+
+              task.setAttribute("data-task-index", j);
+              task.setAttribute("data-project-index", i);
+              listForTasks.appendChild(task);
+              if (taskObj.complete) {
+                task.classList.toggle("complete", true);
+              } else {
+                task.classList.toggle("complete", false);
+              }
+              let complete = document.querySelectorAll(".complete");
+              complete.forEach((item) => {
+                item.firstElementChild.checked = "true";
+              });
+            }
+          }
+        }
+      }
     });
+
     // *week
+    weekBtn.addEventListener("click", function (e) {
+      clearListForTasks();
+      if (projects.length != 0) {
+        for (let i = 0; i <= projects.length - 1; i++) {
+          for (let j = 0; j <= projects[i].tasks.length - 1; j++) {
+            if (isThisWeek(parseISO(projects[i].tasks[j].dueDate))) {
+              let taskObj = projects[i].tasks[j];
+              let task = document.createElement("div");
+              task.classList.add("task", "row", "container-fluid");
+              task.innerHTML = `
+            <input class="col-sm-1 task-complete" type="checkbox">
+             <p class="col-sm-3 task-title" >${taskObj.title} ${taskObj.dueDate}</p>
+             <span class="col-sm-6 task-description">${taskObj.description}</span>
+             <div class="col-sm-2 d-flex justify-content-between"><button class="btn btn-sm btn-dark task-edit"><i class="far fa-edit"></i></button><button class="btn btn-sm btn-danger task-delete"><i class="fas fa-trash-alt"></i></button></div>
+        `;
+
+              task.setAttribute("data-task-index", j);
+              task.setAttribute("data-project-index", i);
+              listForTasks.appendChild(task);
+              if (taskObj.complete) {
+                task.classList.toggle("complete", true);
+              } else {
+                task.classList.toggle("complete", false);
+              }
+              let complete = document.querySelectorAll(".complete");
+              complete.forEach((item) => {
+                item.firstElementChild.checked = "true";
+              });
+            }
+          }
+        }
+      }
+    });
+    //TODO : edit btn, responsive design
   }
   //! clearTasksDivBottom
   function clearTasksDivBottom() {
